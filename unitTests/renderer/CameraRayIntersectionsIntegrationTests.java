@@ -44,8 +44,8 @@ public class CameraRayIntersectionsIntegrationTests {
         int count = 0;
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                if (geometry.findIntersections(camera.constructRay(3, 3, j, i)) != null) {
-                    count += geometry.findIntersections(camera.constructRay(3, 3, j, i)).size();
+                if (geometry.findIntersections(camera.rayGenerator.generateCentralRayOfPixel(3, 3, j, i)) != null) {
+                    count += geometry.findIntersections(camera.rayGenerator.generateCentralRayOfPixel(3, 3, j, i)).size();
                 }
             }
         }
