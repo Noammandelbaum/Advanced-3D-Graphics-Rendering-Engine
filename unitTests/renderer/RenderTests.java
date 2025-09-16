@@ -47,10 +47,10 @@ public class RenderTests {
 
         // right
         camera
-                .setImageWriter(new ImageWriter("base render test", 1000, 1000))
+                .setImageWriter(new ImageWriter("Base/base render test", 1000, 1000))
                 .build()
-                .renderImage()
-                .printGrid(100, new Color(YELLOW))
+                .generateRenderedImage()
+                .overlayGridOnImage(100, new Color(YELLOW))
                 .writeToImage();
     }
 
@@ -74,10 +74,10 @@ public class RenderTests {
         scene.setAmbientLight(new AmbientLight(new Color(WHITE), new Double3(0.2, 0.2, 0.2))); //
 
         camera
-                .setImageWriter(new ImageWriter("color render test", 1000, 1000))
+                .setImageWriter(new ImageWriter("Base/color render test", 1000, 1000))
                 .build()
-                .renderImage()
-                .printGrid(100, new Color(WHITE))
+                .generateRenderedImage()
+                .overlayGridOnImage(100, new Color(WHITE))
                 .writeToImage();
     }
 }

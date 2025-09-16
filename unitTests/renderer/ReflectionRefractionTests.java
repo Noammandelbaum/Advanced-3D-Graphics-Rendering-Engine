@@ -2,7 +2,6 @@ package renderer;
 
 import static java.awt.Color.*;
 
-import geometries.Cylinder;
 import geometries.Plane;
 import org.junit.jupiter.api.Test;
 
@@ -48,9 +47,9 @@ public class ReflectionRefractionTests {
 
         cameraBuilder.setLocation(new Point(0, 0, 1000)).setVPDistance(1000)
                 .setVPSize(150, 150)
-                .setImageWriter(new ImageWriter("refractionTwoSpheres", 500, 500))
+                .setImageWriter(new ImageWriter("ReflectionRefraction/refractionTwoSpheres", 500, 500))
                 .build()
-                .renderImage()
+                .generateRenderedImage()
                 .writeToImage();
     }
 
@@ -79,9 +78,9 @@ public class ReflectionRefractionTests {
 
         cameraBuilder.setLocation(new Point(0, 0, 10000)).setVPDistance(10000)
                 .setVPSize(2500, 2500)
-                .setImageWriter(new ImageWriter("reflectionTwoSpheresMirrored", 500, 500))
+                .setImageWriter(new ImageWriter("ReflectionRefraction/reflectionTwoSpheresMirrored", 500, 500))
                 .build()
-                .renderImage()
+                .generateRenderedImage()
                 .writeToImage();
     }
 
@@ -107,9 +106,9 @@ public class ReflectionRefractionTests {
 
         cameraBuilder.setLocation(new Point(0, 0, 1000)).setVPDistance(1000)
                 .setVPSize(200, 200)
-                .setImageWriter(new ImageWriter("refractionShadow", 600, 600))
+                .setImageWriter(new ImageWriter("ReflectionRefraction/refractionShadow", 600, 600))
                 .build()
-                .renderImage()
+                .generateRenderedImage()
                 .writeToImage();
     }
 
@@ -150,12 +149,12 @@ public class ReflectionRefractionTests {
                 .setDirection(new Vector(0, 0, -1), new Vector(0, 1, 0))
                 .setVPDistance(200)
                 .setVPSize(200, 200)
-                .setImageWriter(new ImageWriter("planeSphereTriangleScene", 500, 500))
+                .setImageWriter(new ImageWriter("ReflectionRefraction/planeSphereTriangleScene", 500, 500))
                 .setRayTracer(new SimpleRayTracer(scene))
                 .build();
 
         // Render and write image
-        camera.renderImage();
+        camera.generateRenderedImage();
         camera.writeToImage();
     }
     }

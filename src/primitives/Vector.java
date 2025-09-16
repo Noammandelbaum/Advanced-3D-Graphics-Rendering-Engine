@@ -130,4 +130,29 @@ public class Vector extends Point {
     public Vector normalize() {
         return scale(1 / length());
     }
+
+    /**
+     * Computes a perpendicular vector to this vector.
+     * <p>
+     * This method returns a normalized vector that is perpendicular to the current vector.
+     * The perpendicular vector is chosen based on the following rules:
+     * <ul>
+     * <li>If the current vector is not aligned with the Z-axis, the perpendicular vector is computed
+     *     using the XY-plane.</li>
+     * <li>If the current vector is parallel to the Z-axis, the perpendicular vector is computed
+     *     using the YZ-plane to avoid degeneracy.</li>
+     * </ul>
+     * The result is always a unit vector.
+     *
+     * @return a new vector that is perpendicular to this vector.
+     */
+    public Vector createPerpendicular() {
+        // If the vector is not parallel to the Z-axis, use the XY-plane to find a perpendicular vector
+        if (Math.abs(this._xyz.d3) < 1) {
+            return new Vector(-this._xyz.d2, this._xyz.d1, 0).normalize();
+        }
+        // If the vector is parallel to the Z-axis, use the YZ-plane instead
+        return new Vector(0, -this._xyz.d3, this._xyz.d2).normalize();
+    }
+
 }

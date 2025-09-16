@@ -4,6 +4,7 @@ import primitives.Color;
 import primitives.Point;
 import primitives.Ray;
 import primitives.Vector;
+import renderer.superSampling.SamplingConfig;
 
 import java.util.MissingResourceException;
 
@@ -12,7 +13,10 @@ import static primitives.Util.isZero;
 
 /**
  * Represents a camera in a 3D space.
+ * The Camera class manages the view plane and constructs rays for rendering.
+ * It ensures proper configuration and enforces parameter validation.
  */
+
 public class Camera implements Cloneable {
     private Point p0;
     private Point VPCenter;
@@ -65,72 +69,75 @@ public class Camera implements Cloneable {
     }
 
     /**
-     * Constructs a ray from the camera through a pixel (i, j).
+     * Generates a ray from the camera through a specific pixel (pixelColumnIndex, pixelRowIndex).
      *
-     * @param nX number of pixels in the x direction
-     * @param nY number of pixels in the y direction
-     * @param j  the pixel column index
-     * @param i  the pixel row index
-     * @return the constructed ray
+     * @param pixelColumns Number of pixels in the x direction.
+     * @param pixelRows Number of pixels in the y direction.
+     * @param pixelColumnIndex The column index of the pixel.
+     * @param pixelRowIndex The row index of the pixel.
+     * @return The constructed ray passing through the specified pixel.
      */
-    public Ray constructRay(int nX, int nY, int j, int i) {
-        Point pc = this.VPCenter; // Center point of the view plane
-        double Ry = height / nY; // Pixel height
-        double Rx = width / nX; // Pixel width
+    public Ray generateRayThroughPixel(int pixelColumns, int pixelRows, int pixelColumnIndex, int pixelRowIndex) {
+        Point viewPlaneCenter = this.VPCenter; // Center point of the view plane
+        double pixelHeight = height / pixelRows; // Pixel height
+        double pixelWidth = width / pixelColumns; // Pixel width
 
-        double yI = alignZero(-(i - (nY - 1) / 2d) * Ry); // Vertical shift
-        double xJ = alignZero((j - (nX - 1) / 2d) * Rx); // Horizontal shift
+        double yShift = alignZero(-(pixelRowIndex - (pixelRows - 1) / 2d) * pixelHeight); // Vertical shift
+        double xShift = alignZero((pixelColumnIndex - (pixelColumns - 1) / 2d) * pixelWidth); // Horizontal shift
 
-        Point pIJ = pc;
-        if (!isZero(xJ)) pIJ = pIJ.add(vRight.scale(xJ));
-        if (!isZero(yI)) pIJ = pIJ.add(vUp.scale(yI));
+        Point pixelPosition = viewPlaneCenter;
+        if (!isZero(xShift)) pixelPosition = pixelPosition.add(vRight.scale(xShift));
+        if (!isZero(yShift)) pixelPosition = pixelPosition.add(vUp.scale(yShift));
 
-        return new Ray(p0, pIJ.subtract(p0));
+        return new Ray(p0, pixelPosition.subtract(p0));
     }
 
     /**
-     * Renders the image by casting rays through each pixel and computing the color.
-     * @return the Camera object itself for chaining
+     * Generates the rendered image by tracing rays through each pixel and computing their color.
+     * @return The Camera object itself for method chaining.
      */
-    public Camera renderImage() {
-        int nx = imageWriter.getNx();
-        int ny = imageWriter.getNy();
+    public Camera generateRenderedImage() {
+        int pixelColumns = imageWriter.getImageHeight();
+        int pixelRows = imageWriter.getImageWidth();
 
-        for (int i = 0; i < ny; i++) {
-            for (int j = 0; j < nx; j++) {
-                castRay(nx, ny, j, i);
+        for (int pixelRowIndex = 0; pixelRowIndex < pixelRows; pixelRowIndex++) {
+            for (int pixelColumnIndex = 0; pixelColumnIndex < pixelColumns; pixelColumnIndex++) {
+                shootRayAndComputeColor(pixelColumns, pixelRows, pixelColumnIndex, pixelRowIndex);
             }
         }
         return this;
     }
 
     /**
-     * Casts a ray through the center of the specified pixel, computes the color of the ray,
-     * and writes the color to the pixel.
+     * Shoots a ray through the center of the specified pixel, computes its color,
+     * and writes the color to the image.
      *
-     * @param nx number of pixels in the x direction
-     * @param ny number of pixels in the y direction
-     * @param j  the x coordinate of the pixel
-     * @param i  the y coordinate of the pixel
+     * @param pixelColumns Number of pixels in the x direction.
+     * @param pixelRows Number of pixels in the y direction.
+     * @param pixelColumnIndex The column index of the pixel.
+     * @param pixelRowIndex The row index of the pixel.
      */
-    private void castRay(int nx, int ny, int j, int i) {
-        imageWriter.writePixel(j, i, rayTracer.traceRay(constructRay(nx, ny, j, i)));
+    private void shootRayAndComputeColor(int pixelColumns, int pixelRows, int pixelColumnIndex, int pixelRowIndex) {
+        imageWriter.setPixelColor(
+                pixelColumnIndex, pixelRowIndex,
+                rayTracer.traceRay(generateRayThroughPixel(pixelColumns, pixelRows, pixelColumnIndex, pixelRowIndex))
+        );
     }
 
     /**
-     * Prints a grid over the rendered image.
-     * @return the Camera object itself for chaining
-     * @param interval the interval between grid lines
-     * @param color    the color of the grid lines
+     * Overlays a grid on the rendered image by coloring specific pixels at regular intervals.
+     * @param gridSpacing The spacing between grid lines (in pixels).
+     * @param gridColor The color of the grid lines.
+     * @return The Camera object itself for method chaining.
      */
-    public Camera printGrid(int interval, Color color) {
-        int nx = imageWriter.getNx();
-        int ny = imageWriter.getNy();
+    public Camera overlayGridOnImage(int gridSpacing, Color gridColor) {
+        int pixelColumns = imageWriter.getImageHeight();
+        int pixelRows = imageWriter.getImageWidth();
 
-        for (int i = 0; i < ny; i++) {
-            for (int j = 0; j < nx; j++) {
-                if (i % interval == 0 || j % interval == 0) {
-                    imageWriter.writePixel(j, i, color);
+        for (int pixelRowIndex = 0; pixelRowIndex < pixelRows; pixelRowIndex++) {
+            for (int pixelColumnIndex = 0; pixelColumnIndex < pixelColumns; pixelColumnIndex++) {
+                if (pixelRowIndex % gridSpacing == 0 || pixelColumnIndex % gridSpacing == 0) {
+                    imageWriter.setPixelColor(pixelColumnIndex, pixelRowIndex, gridColor);
                 }
             }
         }
@@ -141,7 +148,7 @@ public class Camera implements Cloneable {
      * Writes the image to a file.
      */
     public void writeToImage() {
-        imageWriter.writeToImage();
+        imageWriter.saveImageToFile();
     }
 
     @Override
@@ -276,6 +283,12 @@ public class Camera implements Cloneable {
             return this;
         }
 
+        public Builder setSamplingConfig(SamplingConfig config) {
+            if (camera.rayTracer instanceof SimpleRayTracer) {
+                ((SimpleRayTracer) camera.rayTracer).setSamplingConfig(config);
+            }
+            return this;
+        }
 
         /**
          * Builds the Camera object after checking that all necessary fields are set.

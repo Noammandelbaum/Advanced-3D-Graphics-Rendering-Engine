@@ -43,6 +43,11 @@ public class Point {
         this._xyz = new Double3(other._xyz);
     }
 
+
+    public double getX() { return _xyz.d1; }
+    public double getY() { return _xyz.d2; }
+    public double getZ() { return _xyz.d3; }
+
     /**
      * Compares two points for equality.
      *
