@@ -54,7 +54,7 @@ public class ShadowTests {
                         .setKL(1E-5).setKQ(1.5E-7));
         camera.setImageWriter(new ImageWriter(pictName, 400, 400))
                 .build()
-                .renderImage() //
+                .generateRenderedImage() //
                 .writeToImage();
     }
 
@@ -63,7 +63,7 @@ public class ShadowTests {
      */
     @Test
     public void sphereTriangleInitial() {
-        sphereTriangleHelper("shadowSphereTriangleInitial", //
+        sphereTriangleHelper("Shadow/shadowSphereTriangleInitial", //
                 new Triangle(new Point(-70, -40, 0), new Point(-40, -70, 0), new Point(-68, -68, -4)), //
                 new Point(-100, -100, 200));
     }
@@ -73,7 +73,7 @@ public class ShadowTests {
      */
     @Test
     public void sphereTriangleMove1() {
-        sphereTriangleHelper("shadowSphereTriangleMove1", //
+        sphereTriangleHelper("Shadow/shadowSphereTriangleMove1", //
                 new Triangle(new Point(-60, -30, 0), new Point(-30, -60, 0), new Point(-58, -58, -4)), //
         new Point(-100, -100, 200));
     }
@@ -83,7 +83,7 @@ public class ShadowTests {
      */
     @Test
     public void sphereTriangleMove2() {
-        sphereTriangleHelper("shadowSphereTriangleMove2", //
+        sphereTriangleHelper("Shadow/shadowSphereTriangleMove2", //
                 new Triangle(new Point(-50, -20, 0), new Point(-20, -50, 0), new Point(-48, -48, -4)), //
         new Point(-100, -100, 200));
     }
@@ -93,7 +93,7 @@ public class ShadowTests {
      */
     @Test
     public void sphereTriangleSpot1() {
-        sphereTriangleHelper("shadowSphereTriangleSpot1", //
+        sphereTriangleHelper("Shadow/shadowSphereTriangleSpot1", //
                 new Triangle(new Point(-70, -40, 0), new Point(-40, -70, 0), new Point(-68, -68, -4)), //
                 new Point(-90, -90, 120));
     }
@@ -103,7 +103,7 @@ public class ShadowTests {
      */
     @Test
     public void sphereTriangleSpot2() {
-        sphereTriangleHelper("shadowSphereTriangleSpot2", //
+        sphereTriangleHelper("Shadow/shadowSphereTriangleSpot2", //
                 new Triangle(new Point(-70, -40, 0), new Point(-40, -70, 0), new Point(-68, -68, -4)), //
                 new Point(-80, -80, 80));
     }
@@ -129,9 +129,9 @@ public class ShadowTests {
                 new SpotLight(new Color(700, 400, 400), new Point(40, 40, 115), new Vector(-1, -1, -4)) //
                         .setKL(4E-4).setKQ(2E-5));
 
-        camera.setImageWriter(new ImageWriter("shadowTrianglesSphere", 600, 600))
+        camera.setImageWriter(new ImageWriter("Shadow/shadowTrianglesSphere", 600, 600))
                 .build()
-                .renderImage()
+                .generateRenderedImage()
                 .writeToImage();
     }
 

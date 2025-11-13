@@ -20,7 +20,7 @@ public class ImageWriterTests {
         // Define image properties
         int nX = 800; // width of the image
         int nY = 500; // height of the image
-        ImageWriter imageWriter = new ImageWriter("test_grid_image", nX, nY);
+        ImageWriter imageWriter = new ImageWriter("Base/test_grid_image", nX, nY);
 
         // Define colors
         Color backgroundColor = new Color(255, 255, 255); // white color
@@ -34,18 +34,18 @@ public class ImageWriterTests {
         for (int i = 0; i < nX; i++) {
             for (int j = 0; j < nY; j++) {
                 if (i % gridSpacingX == 0 || j % gridSpacingY == 0) {
-                    imageWriter.writePixel(i, j, gridColor);
+                    imageWriter.setPixelColor(i, j, gridColor);
                 } else {
-                    imageWriter.writePixel(i, j, backgroundColor);
+                    imageWriter.setPixelColor(i, j, backgroundColor);
                 }
             }
         }
 
         // Write the image to a file
-        imageWriter.writeToImage();
+        imageWriter.saveImageToFile();
 
         // Verify that the image file was created
-        File file = new File(System.getProperty("user.dir") + "/images/test_grid_image.png");
+        File file = new File(System.getProperty("user.dir") + "/images/Base/test_grid_image.png");
         assertTrue(file.exists(), "Image file was not created");
     }
 }

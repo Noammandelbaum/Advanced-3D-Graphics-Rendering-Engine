@@ -2,21 +2,34 @@ package renderer;
 
 import lighting.LightSource;
 import primitives.*;
+import renderer.superSampling.SamplingConfig;
+import renderer.superSampling.SuperSampling;
 import scene.Scene;
 import geometries.Intersectable.GeoPoint;
+
+import java.util.ArrayList;
 import java.util.List;
+
 import static primitives.Util.alignZero;
 
 /**
- * SimpleRayTracer class for handling ray tracing to determine color at specific points in the scene.
+ * Implements a simple ray tracer for rendering a 3D scene.
+ * <p>
+ * The `SimpleRayTracer` is responsible for computing the color of each pixel in the scene
+ * by tracing rays from the camera into the 3D space. It handles both direct ray tracing
+ * and anti-aliasing techniques using super-sampling.
+ * </p>
  */
 public class SimpleRayTracer extends RayTracerBase {
     private static final int MAX_CALC_COLOR_LEVEL = 10;
     private static final double MIN_CALC_COLOR_K = 0.001;
     private static final Double3 INITIAL_K = Double3.ONE;
 
+    private SamplingConfig samplingConfig;
+    private SuperSampling antiAliasingSampler;
+
     /**
-     * Constructor to initialize the ray tracer with a scene.
+     * Constructs a `SimpleRayTracer` with a given scene.
      *
      * @param scene The scene to be rendered.
      */
@@ -25,36 +38,123 @@ public class SimpleRayTracer extends RayTracerBase {
     }
 
     /**
-     * Traces a given ray and determines the color at the closest intersection point.
+     * Configures the sampling settings, including anti-aliasing parameters.
+     * <p>
+     * If anti-aliasing is enabled in the configuration, a `SuperSampling` instance is created
+     * to generate multiple rays per pixel, improving image quality by reducing aliasing artifacts.
+     * </p>
      *
-     * @param ray The ray to trace.
-     * @return The color at the intersection point, or the background color if no intersection is found.
+     * @param config The sampling configuration containing anti-aliasing settings.
+     */
+    public void setSamplingConfig(SamplingConfig config) {
+        this.samplingConfig = config;
+
+        // Enable SuperSampling only if anti-aliasing is enabled
+        if (config.isAntiAliasingEnabled()) {
+            this.antiAliasingSampler = new SuperSampling(config.getAntiAliasingSamples(), config.getAntiAliasingSize(), config.getAntiAliasingPattern());
+        } else {
+            this.antiAliasingSampler = null;
+        }
+    }
+
+    /**
+     * Traces a given ray and determines the color at the closest intersection point.
+     * <p>
+     * If anti-aliasing is enabled, multiple rays are generated for better color accuracy.
+     * Otherwise, a simple ray tracing approach is used.
+     * </p>
+     *
+     * @param ray The primary ray to trace.
+     * @return The computed color at the intersection point, or the background color if no intersection is found.
      */
     @Override
     public Color traceRay(Ray ray) {
+        if (ray == null) {
+            throw new IllegalArgumentException("Ray cannot be null");
+        }
+
         GeoPoint intersection = findClosestIntersection(ray);
-        return intersection == null ? scene.background : calcColor(intersection, ray);
+
+        // Return background color if no intersection is found
+        if (intersection == null) {
+            return scene.background;
+        }
+
+        // Apply anti-aliasing if enabled
+        if (samplingConfig != null && samplingConfig.isAntiAliasingEnabled()) {
+            return applyAntiAliasing(ray, intersection);
+        }
+
+        return traceSimpleRay(ray, intersection);
     }
+
+    /**
+     * Computes the color of a given ray at its intersection point.
+     * <p>
+     * This method is used when anti-aliasing is disabled, performing a single ray tracing pass
+     * without multiple sample rays.
+     * </p>
+     *
+     * @param ray          The ray to trace.
+     * @param intersection The intersection point of the ray with a geometry.
+     * @return The computed color at the intersection point.
+     */
+    public Color traceSimpleRay(Ray ray, GeoPoint intersection) {
+        return calcColor(intersection, ray);
+    }
+
+
+    /**
+     * Applies anti-aliasing by averaging colors from multiple sampled rays.
+     * <p>
+     * This method improves image quality by reducing aliasing artifacts using super-sampling.
+     * Instead of tracing a single ray per pixel, multiple rays are generated within the pixel area,
+     * and their colors are averaged to produce a smoother transition between edges.
+     * </p>
+     *
+     * <p>The process involves the following steps:
+     * <ul>
+     *     <li>Generating multiple sample rays using the configured `SuperSampling` instance.</li>
+     *     <li>Tracing each sampled ray to determine its color contribution.</li>
+     *     <li>Averaging the colors from all sampled rays to produce the final color.</li>
+     * </ul>
+     * </p>
+     *
+     * @param ray          The primary ray that was initially traced.
+     * @param intersection The closest intersection point of the primary ray.
+     * @return The averaged color computed from multiple sampled rays.
+     */
+    private Color applyAntiAliasing(Ray ray, GeoPoint intersection) {
+        List<Ray> rays = antiAliasingSampler.generateSampleRays(intersection.point, ray);
+
+        List<Color> colors = new ArrayList<>();
+        for (Ray sampledRay : rays) {
+            GeoPoint sampledIntersection = findClosestIntersection(sampledRay);
+            colors.add(sampledIntersection == null ? scene.background : traceSimpleRay(sampledRay, sampledIntersection));
+        }
+
+        return antiAliasingSampler.calculateAverageColor(colors);
+    }
+
 
     /**
      * Wrapper function to calculate the color at a point, including ambient light.
      *
      * @param intersection The intersection point and geometry.
-     * @param ray The ray hitting the geometry.
+     * @param ray          The ray hitting the geometry.
      * @return The color at the intersection point with ambient light.
      */
     private Color calcColor(GeoPoint intersection, Ray ray) {
-        return calcColor(intersection, ray, MAX_CALC_COLOR_LEVEL, INITIAL_K)
-                .add(scene.ambientLight.getIntensity());
+        return calcColor(intersection, ray, MAX_CALC_COLOR_LEVEL, INITIAL_K).add(scene.ambientLight.getIntensity());
     }
 
     /**
      * Recursive calculation of color at a point, excluding ambient light for recursive calls.
      *
      * @param intersection The intersection point.
-     * @param ray The ray that hit the point.
-     * @param level The recursion level.
-     * @param k The attenuation coefficient.
+     * @param ray          The ray that hit the point.
+     * @param level        The recursion level.
+     * @param k            The attenuation coefficient.
      * @return The calculated color at the point.
      */
     private Color calcColor(GeoPoint intersection, Ray ray, int level, Double3 k) {
@@ -62,16 +162,15 @@ public class SimpleRayTracer extends RayTracerBase {
             return Color.BLACK;
         }
 
-        return calcLocalEffects(intersection, ray, k)
-                .add(calcGlobalEffects(intersection, ray, level, k));
+        return calcLocalEffects(intersection, ray, k).add(calcGlobalEffects(intersection, ray, level, k));
     }
 
     /**
      * Calculate the local lighting effects (diffuse and specular) at a given point.
      *
-     * @param gp The geometry point to evaluate.
+     * @param gp  The geometry point to evaluate.
      * @param ray The incoming ray.
-     * @param k The attenuation coefficient.
+     * @param k   The attenuation coefficient.
      * @return The calculated local color.
      */
     private Color calcLocalEffects(GeoPoint gp, Ray ray, Double3 k) {
@@ -92,10 +191,7 @@ public class SimpleRayTracer extends RayTracerBase {
                 Double3 ktr = transparency(gp, lightSource, l, n);
                 if (!ktr.product(k).lowerThan(MIN_CALC_COLOR_K)) {
                     Color iL = lightSource.getIntensity(gp.point).scale(ktr);
-                    color = color.add(
-                            calcDiffusive(material.kD, nl, iL),
-                            calcSpecular(material.kS, n, l, nl, v, iL, material.Shininess)
-                    );
+                    color = color.add(calcDiffusive(material.kD, nl, iL), calcSpecular(material.kS, n, l, nl, v, iL, material.Shininess));
                 }
             }
         }
@@ -105,9 +201,9 @@ public class SimpleRayTracer extends RayTracerBase {
     /**
      * Constructs a reflected ray from a given point.
      *
-     * @param gp The geometry point of intersection.
+     * @param gp        The geometry point of intersection.
      * @param direction The direction of the incoming ray.
-     * @param n The normal vector at the intersection point.
+     * @param n         The normal vector at the intersection point.
      * @return The reflected ray.
      */
     private Ray constructReflectedRay(GeoPoint gp, Vector direction, Vector n) {
@@ -117,9 +213,9 @@ public class SimpleRayTracer extends RayTracerBase {
     /**
      * Constructs a refracted ray from a given point.
      *
-     * @param gp The geometry point of intersection.
+     * @param gp        The geometry point of intersection.
      * @param direction The direction of the incoming ray.
-     * @param n The normal vector at the intersection point.
+     * @param n         The normal vector at the intersection point.
      * @return The refracted ray.
      */
     private Ray constructRefractedRay(GeoPoint gp, Vector direction, Vector n) {
@@ -129,10 +225,10 @@ public class SimpleRayTracer extends RayTracerBase {
     /**
      * Calculates global lighting effects (reflection and refraction).
      *
-     * @param gp The geometry point to evaluate.
-     * @param ray The incoming ray.
+     * @param gp    The geometry point to evaluate.
+     * @param ray   The incoming ray.
      * @param level The recursion level.
-     * @param k The attenuation coefficient.
+     * @param k     The attenuation coefficient.
      * @return The calculated global color.
      */
     private Color calcGlobalEffects(GeoPoint gp, Ray ray, int level, Double3 k) {
@@ -159,10 +255,10 @@ public class SimpleRayTracer extends RayTracerBase {
     /**
      * Helper function to calculate the global effect for a given ray (either reflection or refraction).
      *
-     * @param ray The ray to trace.
+     * @param ray   The ray to trace.
      * @param level The recursion level.
-     * @param k The attenuation coefficient.
-     * @param kx The reflection or refraction coefficient.
+     * @param k     The attenuation coefficient.
+     * @param kx    The reflection or refraction coefficient.
      * @return The calculated color contribution from the global effect.
      */
     private Color calcGlobalEffect(Ray ray, int level, Double3 k, Double3 kx) {
@@ -176,10 +272,10 @@ public class SimpleRayTracer extends RayTracerBase {
     /**
      * Calculates the transparency factor for a given point by evaluating light occlusions.
      *
-     * @param gp The geometry point to evaluate.
+     * @param gp    The geometry point to evaluate.
      * @param light The light source being considered.
-     * @param l The direction from the point to the light source.
-     * @param n The normal vector at the intersection point.
+     * @param l     The direction from the point to the light source.
+     * @param n     The normal vector at the intersection point.
      * @return The transparency coefficient (1 if fully transparent, 0 if fully blocked).
      */
     private Double3 transparency(GeoPoint gp, LightSource light, Vector l, Vector n) {
@@ -224,12 +320,12 @@ public class SimpleRayTracer extends RayTracerBase {
     /**
      * Calculates the specular component of the lighting.
      *
-     * @param kS The specular coefficient.
-     * @param n The normal vector at the point.
-     * @param l The light direction.
-     * @param nl The dot product of the normal and light direction.
-     * @param v The view direction.
-     * @param iL The intensity of the light source.
+     * @param kS         The specular coefficient.
+     * @param n          The normal vector at the point.
+     * @param l          The light direction.
+     * @param nl         The dot product of the normal and light direction.
+     * @param v          The view direction.
+     * @param iL         The intensity of the light source.
      * @param nShininess The shininess factor of the material.
      * @return The specular color component.
      */

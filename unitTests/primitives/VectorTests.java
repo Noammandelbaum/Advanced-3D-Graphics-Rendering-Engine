@@ -161,6 +161,46 @@ class VectorTests {
         assertEquals(new Vector(0.6, 0, 0.8), result, "normalize() failed");
         assertEquals(1, result.length(), DELTA, "normalized vector is not of length 1");
     }
+
+    /**
+     * Test method for {@link primitives.Vector#createPerpendicular()}.
+     */
+    @Test
+    void testCreatePerpendicular() {
+        // ============ Equivalence Partitions Tests ==============
+
+        // TC01: Perpendicular to a vector in the X-axis
+        Vector v1 = new Vector(1, 0, 0);
+        Vector perp1 = v1.createPerpendicular();
+        assertEquals(0, v1.dotProduct(perp1), DELTA, "createPerpendicular() failed - vector is not perpendicular");
+
+        // TC02: Perpendicular to a vector in the Y-axis
+        Vector v2 = new Vector(0, 1, 0);
+        Vector perp2 = v2.createPerpendicular();
+        assertEquals(0, v2.dotProduct(perp2), DELTA, "createPerpendicular() failed - vector is not perpendicular");
+
+        // TC03: Perpendicular to a vector in the Z-axis
+        Vector v3 = new Vector(0, 0, 1);
+        Vector perp3 = v3.createPerpendicular();
+        assertEquals(0, v3.dotProduct(perp3), DELTA, "createPerpendicular() failed - vector is not perpendicular");
+
+        // TC04: Perpendicular to a general vector
+        Vector v4 = new Vector(1, 2, 3);
+        Vector perp4 = v4.createPerpendicular();
+        assertEquals(0, v4.dotProduct(perp4), DELTA, "createPerpendicular() failed - vector is not perpendicular");
+
+        // =============== Boundary Values Tests ==================
+
+        // TC10: Perpendicular to a unit vector along Z-axis
+        Vector v5 = new Vector(0, 0, 1);
+        Vector perp5 = v5.createPerpendicular();
+        assertEquals(0, v5.dotProduct(perp5), DELTA, "createPerpendicular() failed - vector is not perpendicular");
+
+        // TC11: Checking the perpendicular vector is normalized
+        assertEquals(1, perp5.length(), DELTA, "createPerpendicular() failed - perpendicular vector is not normalized");
+    }
+
+
 }
 
 
