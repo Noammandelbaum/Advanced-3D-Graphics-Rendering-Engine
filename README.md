@@ -6,7 +6,7 @@
 ![JUnit](https://img.shields.io/badge/JUnit-25A162?style=for-the-badge&logo=junit5&logoColor=white)
 ![OOP](https://img.shields.io/badge/OOP-Design_Patterns-blue?style=for-the-badge)
 
-<img src="images/bigScenes/RealisticPianoFinal_WithAA.png" alt="Ray Tracer Engine - Realistic Piano Scene" width="600">
+<img src="images/bigScenes/RealisticPianoFinal.png" alt="Ray Tracer Engine - Realistic Piano Scene" width="600">
 
 **Building reliable systems with testing discipline – one ray at a time**
 
@@ -438,8 +438,8 @@ This principle guided every decision:
 <table>
 <tr>
 <td width="50%">
-<img src="images/bigScenes/RealisticPianoFinal_WithAA.png" alt="Realistic Piano" width="100%">
-<p align="center"><em><strong>Realistic Upright Piano</strong><br>50+ primitives, reflection materials, 30 samples AA</em></p>
+<img src="images/bigScenes/RealisticPianoFinal.png" alt="Realistic Piano" width="100%">
+<p align="center"><em><strong>Realistic Upright Piano</strong><br>50+ primitives, reflection materials, realistic lighting and shadows</em></p>
 </td>
 <td width="50%">
 <img src="images/bigScenes/SimpleHouseScene.png" alt="House Scene" width="100%">
